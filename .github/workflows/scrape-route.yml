@@ -21,14 +21,26 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
+      - name: 🌐 Check network connectivity
+        run: |
+          echo "Testing network connectivity..."
+          curl -I https://registry.npmjs.org/ --max-time 10
+          echo "Network test completed"
+
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: 📚 Install dependencies
-        run: npm ci --only=prod
+        run: |
+          echo "Starting npm ci at $(date)"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          timeout 120 npm ci --verbose --prefer-offline
+          echo "npm ci completed at $(date)"
 
       - name: 🔍 Validate route ID
         run: |
