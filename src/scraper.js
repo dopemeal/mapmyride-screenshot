@@ -3,6 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const config = require('./config');
 
+// Global timeout for the entire operation (4 minutes to fit in 10-minute GitHub Actions timeout)
+const GLOBAL_TIMEOUT = 240000; // 4 minutes
+
 async function scrapeRoute(routeId) {
   if (!routeId) {
     console.error('❌ Error: No route ID provided');
@@ -12,6 +15,26 @@ async function scrapeRoute(routeId) {
 
   console.log(`🚴 Scraping MapMyRide route: ${routeId}`);
 
+  // Create a timeout promise that rejects after GLOBAL_TIMEOUT
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error('Scraping exceeded maximum time limit (4 minutes)'));
+    }, GLOBAL_TIMEOUT);
+  });
+
+  try {
+    // Race the main scraping logic against the timeout
+    return await Promise.race([
+      scrapeRouteInternal(routeId),
+      timeoutPromise
+    ]);
+  } catch (error) {
+    console.error('❌ Scraping failed:', error.message);
+    process.exit(1);
+  }
+}
+
+async function scrapeRouteInternal(routeId) {
   let browser;
   try {
     // Launch browser with platform-specific args
