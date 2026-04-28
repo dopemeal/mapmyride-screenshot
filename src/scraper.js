@@ -56,6 +56,7 @@ async function scrapeRouteInternal(routeId) {
     browser = await puppeteer.launch({
       headless: 'new',
       args,
+      executablePath: process.env.CI ? '/usr/bin/google-chrome' : undefined,
     });
     console.log(`[${new Date().toISOString()}] ✅ Browser launched successfully`);
 
