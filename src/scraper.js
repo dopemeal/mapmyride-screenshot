@@ -105,23 +105,41 @@ async function scrapeRouteInternal(routeId) {
     const url = `${config.mapMyRideBaseUrl}/${routeId}`;
     console.log(`[${new Date().toISOString()}] 📍 Loading: ${url}`);
     
+    let pageLoaded = false;
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: config.timeouts.pageLoad });
+      pageLoaded = true;
       console.log(`[${new Date().toISOString()}] ✅ Page loaded successfully`);
     } catch (err) {
-      console.warn(`[${new Date().toISOString()}] ⚠️  Page load timeout, but attempting to continue...`);
+      console.warn(`[${new Date().toISOString()}] ⚠️  Page load error: ${err.message}`);
+      pageLoaded = false;
     }
 
     // Wait for map to appear
     console.log(`[${new Date().toISOString()}] 🗺️  Waiting for map container...`);
+    let mapFound = false;
     try {
-      await page.waitForSelector(config.selectors.mapContainer, {
-        timeout: config.timeouts.mapRender,
-      });
+      // Try waiting for the main container first
+      await page.waitForFunction(() => {
+        return document.body.innerText.includes('Distance') || 
+               document.querySelectorAll('[class*="map"]').length > 0;
+      }, { timeout: config.timeouts.mapRender });
+      mapFound = true;
       console.log(`[${new Date().toISOString()}] ✅ Map detected`);
     } catch (err) {
-      console.error(`[${new Date().toISOString()}] ❌ Map container not found. Route may not exist or page structure changed.`);
-      throw err;
+      console.error(`[${new Date().toISOString()}] ❌ Map detection failed: ${err.message}`);
+      
+      // Log page content for debugging
+      const pageTitle = await page.title();
+      const bodyText = await page.evaluate(() => document.body.innerText.substring(0, 500));
+      console.error(`[${new Date().toISOString()}] 📄 Page title: ${pageTitle}`);
+      console.error(`[${new Date().toISOString()}] 📄 Page content (first 500 chars): ${bodyText}`);
+      
+      mapFound = false;
+    }
+
+    if (!mapFound) {
+      throw new Error('Map container not found. Route may not exist, page structure changed, or route is private.');
     }
 
     // Remove controls and unwanted buttons
@@ -172,14 +190,26 @@ async function scrapeRouteInternal(routeId) {
     const filename = `route-${routeId}-${Date.now()}.png`;
     const filepath = path.join(outputDir, filename);
     
-    console.log(`[${new Date().toISOString()}] 📸 Taking screenshot...`);
-    await page.screenshot({
-      path: filepath,
-      type: 'png',
-      fullPage: config.screenshot.fullPage,
-    });
+    console.log(`[${new Date().toISOString()}] 📸 Taking screenshot to: ${filepath}`);
+    try {
+      await page.screenshot({
+        path: filepath,
+        type: 'png',
+        fullPage: config.screenshot.fullPage,
+      });
+      
+      // Verify file was created
+      if (fs.existsSync(filepath)) {
+        const stats = fs.statSync(filepath);
+        console.log(`[${new Date().toISOString()}] ✅ Screenshot saved: ${filename} (${stats.size} bytes)`);
+      } else {
+        throw new Error(`Screenshot file was not created at ${filepath}`);
+      }
+    } catch (err) {
+      console.error(`[${new Date().toISOString()}] ❌ Screenshot failed: ${err.message}`);
+      throw err;
+    }
 
-    console.log(`[${new Date().toISOString()}] 📸 Screenshot saved: ${filename}`);
     console.log(`[${new Date().toISOString()}] ✨ Success! Route ${routeId} captured`);
 
     return { success: true, file: filename, path: filepath };
