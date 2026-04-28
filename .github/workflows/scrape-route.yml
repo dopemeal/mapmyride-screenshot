@@ -9,7 +9,8 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
+  actions: read
 
 jobs:
   scrape:
@@ -27,14 +28,16 @@ jobs:
           cache: 'npm'
 
       - name: 📚 Install dependencies
-        run: npm ci
+        run: npm ci --only=prod
 
       - name: 🔍 Validate route ID
         run: |
-          if ! [[ "${{ github.event.inputs.route_id }}" =~ ^[0-9]+$ ]]; then
+          ROUTE_ID="${{ github.event.inputs.route_id }}"
+          if ! [[ "$ROUTE_ID" =~ ^[0-9]+$ ]]; then
             echo "❌ Error: Route ID must be numeric"
             exit 1
           fi
+          echo "✅ Route ID validated: $ROUTE_ID"
 
       - name: 🚴 Run scraper
         run: npm run scrape -- ${{ github.event.inputs.route_id }}

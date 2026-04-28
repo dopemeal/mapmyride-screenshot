@@ -14,14 +14,21 @@ async function scrapeRoute(routeId) {
 
   let browser;
   try {
-    // Launch browser
+    // Launch browser with platform-specific args
+    const args = [
+      '--disable-dev-shm-usage', // Helps with memory on GitHub Actions
+      '--disable-gpu',
+    ];
+    
+    // Only use sandbox restrictions on Linux (GitHub Actions)
+    if (process.env.CI) {
+      args.push('--no-sandbox');
+      args.push('--disable-setuid-sandbox');
+    }
+    
     browser = await puppeteer.launch({
       headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage', // Helps with memory on GitHub Actions
-      ],
+      args,
     });
 
     const page = await browser.newPage();
