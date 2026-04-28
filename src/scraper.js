@@ -41,6 +41,32 @@ async function scrapeRouteInternal(routeId) {
   let browser;
   try {
     console.log(`[${new Date().toISOString()}] 🌐 Launching browser...`);
+    
+    // Determine Chrome/Chromium executable path
+    let executablePath = undefined;
+    if (process.env.CI) {
+      // Try multiple possible Chrome paths on Linux
+      const possiblePaths = [
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
+        '/snap/bin/chromium',
+      ];
+      
+      for (const path of possiblePaths) {
+        const fs = require('fs');
+        if (fs.existsSync(path)) {
+          executablePath = path;
+          console.log(`[${new Date().toISOString()}] ✅ Found Chrome at: ${path}`);
+          break;
+        }
+      }
+      
+      if (!executablePath) {
+        console.warn(`[${new Date().toISOString()}] ⚠️  Chrome not found in common paths, Puppeteer will attempt to find it`);
+      }
+    }
+    
     // Launch browser with platform-specific args
     const args = [
       '--disable-dev-shm-usage', // Helps with memory on GitHub Actions
@@ -53,10 +79,12 @@ async function scrapeRouteInternal(routeId) {
       args.push('--disable-setuid-sandbox');
     }
     
+    console.log(`[${new Date().toISOString()}] 🔧 Browser launch config: executablePath=${executablePath || 'auto'}, args=${args.join(',')}`);
+    
     browser = await puppeteer.launch({
       headless: 'new',
       args,
-      executablePath: process.env.CI ? '/usr/bin/google-chrome' : undefined,
+      executablePath,
     });
     console.log(`[${new Date().toISOString()}] ✅ Browser launched successfully`);
 

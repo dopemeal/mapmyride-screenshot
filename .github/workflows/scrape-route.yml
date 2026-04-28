@@ -63,6 +63,13 @@ jobs:
           fi
           exit $exit_code
 
+      - name: 📁 Check for output files
+        if: always()
+        run: |
+          echo "Checking for output files..."
+          ls -la output/ || echo "No output directory found"
+          find . -name "*.png" -type f 2>/dev/null || echo "No PNG files found"
+
       - name: 📤 Upload screenshot artifact
         if: success()
         uses: actions/upload-artifact@v4
