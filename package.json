@@ -1,0 +1,22 @@
+{
+  "name": "mapmyride-scraper",
+  "version": "1.0.0",
+  "description": "Scrape clean MapMyRide route screenshots via GitHub Actions",
+  "main": "src/scraper.js",
+  "scripts": {
+    "scrape": "node src/scraper.js",
+    "test": "echo \"No tests configured\""
+  },
+  "keywords": [
+    "mapmyride",
+    "scraper",
+    "screenshot",
+    "puppeteer",
+    "cycling"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}

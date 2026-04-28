@@ -1,0 +1,54 @@
+name: 🚴 Scrape MapMyRide Route
+
+on:
+  workflow_dispatch:
+    inputs:
+      route_id:
+        description: 'MapMyRide Route ID (number from URL)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📚 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Validate route ID
+        run: |
+          if ! [[ "${{ github.event.inputs.route_id }}" =~ ^[0-9]+$ ]]; then
+            echo "❌ Error: Route ID must be numeric"
+            exit 1
+          fi
+
+      - name: 🚴 Run scraper
+        run: npm run scrape -- ${{ github.event.inputs.route_id }}
+
+      - name: 📤 Upload screenshot artifact
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: route-screenshot-${{ github.event.inputs.route_id }}
+          path: output/*.png
+          retention-days: 90
+
+      - name: ❌ Handle failure
+        if: failure()
+        run: |
+          echo "Scraping failed for route ID: ${{ github.event.inputs.route_id }}"
+          exit 1

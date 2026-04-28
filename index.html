@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MapMyRide Screenshot Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .status {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .status.loading {
+            display: block;
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #1976d2;
+        }
+
+        .status.success {
+            display: block;
+            background: #e8f5e9;
+            color: #388e3c;
+            border: 1px solid #388e3c;
+        }
+
+        .status.error {
+            display: block;
+            background: #ffebee;
+            color: #d32f2f;
+            border: 1px solid #d32f2f;
+        }
+
+        .preview-container {
+            margin-top: 30px;
+            border-top: 2px solid #f0f0f0;
+            padding-top: 30px;
+            display: none;
+        }
+
+        .preview-container.show {
+            display: block;
+        }
+
+        .preview-title {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        #mapFrame {
+            width: 100%;
+            height: 500px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-buttons {
+            display: none;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .download-buttons.show {
+            display: flex;
+        }
+
+        .download-btn {
+            flex: 1;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover:not(:disabled) {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .download-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            #mapFrame {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚴 MapMyRide Screenshot Generator</h1>
+        <p class="subtitle">Convert your MapMyRide routes into shareable images</p>
+
+        <div class="info-box">
+            <strong>How to use:</strong> Paste your MapMyRide route URL and click "Load Route" to display the map. Then download as PNG or JPG.
+        </div>
+
+        <div class="input-group">
+            <label for="urlInput">MapMyRide URL</label>
+            <input type="text" id="urlInput" placeholder="https://www.mapmyride.com/routes/view/6701064612">
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" id="fetchBtn" onclick="loadRoute()">Load Route</button>
+            <button class="btn-secondary" onclick="clearForm()">Clear</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="preview-container" id="previewContainer">
+            <div class="preview-title">Map Preview</div>
+            <iframe id="mapFrame"></iframe>
+
+            <div class="download-buttons" id="downloadButtons">
+                <button class="download-btn" id="pngBtn" onclick="captureMap('png')">📥 Download PNG</button>
+                <button class="download-btn" id="jpgBtn" onclick="captureMap('jpg')">📥 Download JPG</button>
+            </div>
+
+            <div class="instructions">
+                <strong>💡 Tip:</strong> Wait for the map to fully load, then click "Download PNG" or "Download JPG" to save a screenshot of your route.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function extractRouteId(url) {
+            const match = url.match(/\/routes\/view\/(\d+)/);
+            return match ? match[1] : null;
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        function clearStatus() {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status';
+        }
+
+        function loadRoute() {
+            const url = document.getElementById('urlInput').value.trim();
+            
+            if (!url) {
+                showStatus('Please enter a MapMyRide URL', 'error');
+                return;
+            }
+
+            const routeId = extractRouteId(url);
+            if (!routeId) {
+                showStatus('Invalid MapMyRide URL format. Use: https://www.mapmyride.com/routes/view/ROUTE_ID', 'error');
+                return;
+            }
+
+            showStatus('Loading map...', 'loading');
+            document.getElementById('fetchBtn').disabled = true;
+
+            // Load the route in an iframe
+            const mapFrame = document.getElementById('mapFrame');
+            mapFrame.src = `https://www.mapmyride.com/routes/view/${routeId}`;
+
+            // Show preview container
+            document.getElementById('previewContainer').classList.add('show');
+
+            // Listen for iframe load
+            mapFrame.onload = () => {
+                setTimeout(() => {
+                    document.getElementById('downloadButtons').classList.add('show');
+                    showStatus('✓ Map loaded! Ready to download.', 'success');
+                    document.getElementById('fetchBtn').disabled = false;
+                }, 1500);
+            };
+
+            // Fallback timeout
+            setTimeout(() => {
+                if (document.getElementById('fetchBtn').disabled) {
+                    document.getElementById('downloadButtons').classList.add('show');
+                    showStatus('✓ Map should be loaded. Ready to download.', 'success');
+                    document.getElementById('fetchBtn').disabled = false;
+                }
+            }, 5000);
+        }
+
+        async function captureMap(format) {
+            const btn = event.target;
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.textContent = 'Processing...';
+
+            try {
+                const mapFrame = document.getElementById('mapFrame');
+                
+                // Capture the iframe
+                const canvas = await html2canvas(mapFrame, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    width: mapFrame.offsetWidth,
+                    height: mapFrame.offsetHeight
+                });
+
+                // Download the image
+                const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+                const quality = format === 'jpg' ? 0.95 : undefined;
+                
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `mapmyride-${Date.now()}.${format}`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                    showStatus('✓ Downloaded successfully!', 'success');
+                }, mimeType, quality);
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('urlInput').value = '';
+            document.getElementById('mapFrame').src = '';
+            document.getElementById('previewContainer').classList.remove('show');
+            document.getElementById('downloadButtons').classList.remove('show');
+            document.getElementById('fetchBtn').disabled = false;
+            clearStatus();
+        }
+
+        // Allow Enter key to load
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadRoute();
+            }
+        });
+    </script>
+</body>
+</html>
