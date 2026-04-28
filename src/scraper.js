@@ -45,9 +45,9 @@ async function scrapeRoute(routeId) {
     console.log(`📍 Loading: ${url}`);
     
     try {
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: config.timeouts.pageLoad });
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: config.timeouts.pageLoad });
     } catch (err) {
-      console.warn('⚠️  Page load timeout (network still loading, proceeding anyway)');
+      console.warn('⚠️  Page load timeout, but attempting to continue...');
     }
 
     // Wait for map to appear

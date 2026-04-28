@@ -15,8 +15,8 @@ module.exports = {
   },
   
   timeouts: {
-    pageLoad: 15000,
-    mapRender: 10000,
+    pageLoad: 8000,
+    mapRender: 5000,
   },
   
   screenshot: {
