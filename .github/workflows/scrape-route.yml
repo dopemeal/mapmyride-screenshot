@@ -40,7 +40,16 @@ jobs:
           echo "✅ Route ID validated: $ROUTE_ID"
 
       - name: 🚴 Run scraper
-        run: npm run scrape -- ${{ github.event.inputs.route_id }}
+        run: |
+          npm run scrape -- ${{ github.event.inputs.route_id }} 2>&1 | tee scrape.log
+          exit_code=$?
+          if [ $exit_code -ne 0 ]; then
+            echo "SCRAPE_ERROR=true" >> $GITHUB_ENV
+            echo "SCRAPE_LOG<<EOF" >> $GITHUB_ENV
+            cat scrape.log >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          fi
+          exit $exit_code
 
       - name: 📤 Upload screenshot artifact
         if: success()
@@ -53,5 +62,7 @@ jobs:
       - name: ❌ Handle failure
         if: failure()
         run: |
-          echo "Scraping failed for route ID: ${{ github.event.inputs.route_id }}"
+          echo "❌ Scraping failed for route ID: ${{ github.event.inputs.route_id }}"
+          echo "📋 Error details:"
+          echo "$SCRAPE_LOG"
           exit 1
